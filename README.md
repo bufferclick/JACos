@@ -2,7 +2,7 @@
 
 **Just Another Copy of Sweden's Soundcloud** — paste a public SoundCloud profile or playlist URL and stream what they publish, straight from SoundCloud's own CDN.
 
-[![version](https://img.shields.io/badge/version-0.1.7-ff5500.svg)](package.json)
+[![version](https://img.shields.io/badge/version-0.1.8-ff5500.svg)](package.json)
 [![license](https://img.shields.io/badge/license-MIT-ff5500.svg)](LICENSE)
 
 Open source (MIT), made by **Buffer**. Not affiliated with SoundCloud AB — all audio belongs to its uploaders.
@@ -11,7 +11,7 @@ Open source (MIT), made by **Buffer**. Not affiliated with SoundCloud AB — all
 
 - **Basically SoundCloud, open source** — search the entire catalog, paste a profile (`soundcloud.com/bfrend`), a playlist (`soundcloud.com/bfrend/sets/mix`), a full URL, or a bare `@handle`. Link-style URLs work on the hosted site too (`jac-os.pages.dev/bfrend`). Plain-word searches always open results — never someone's profile.
 - **Search like SoundCloud** — the top search box finds **tracks**, **playlists** and **people** across all of SoundCloud, with SoundCloud-style result sections and pagination.
-- **Likes & playlists — private or public** — like any track and it lands in **Likes**; create unlimited **local playlists** with the ＋ button on any row or in the player. Private playlists stay in this browser only — nothing is uploaded or synced. Make any playlist **public** and it gets a shareable link (`jac-os.pages.dev/<your-slug>`) that anyone can open — no account needed; the link follows your edits and can be made private again any time.
+- **Likes & playlists — private or public** — like any track and it lands in **Likes**; create unlimited **local playlists** with the ＋ button on any row or in the player. **Reorder any playlist** with the handle (drag it, or press ↑ / ↓) — the order sticks and a public link follows it. Private playlists stay in this browser only — nothing is uploaded or synced. Make any playlist **public** and it gets a shareable link (`jac-os.pages.dev/<your-slug>`) that anyone can open — no account needed; the link follows your edits and can be made private again any time.
 - **Fork any playlist** — one tap copies any SoundCloud, public or local playlist into your own private copy, ready to trim, extend and rename.
 - **Full player** — play, shuffle, repeat, seek (drag the bar — audio only jumps when you release), like, volume (defaults to 50%), keyboard shortcuts (Space / arrows / L), and lock-screen controls via the Media Session API. A right-hand library column (likes + playlists) fills the empty space on wide screens.
 - **Dark & light themes** — perfect dark mode, a light theme faithful to SoundCloud, or follow your system. Toggle in the top bar or Settings → Appearance.
@@ -88,6 +88,14 @@ Settings, **About**: version and build timestamp of the running build, GitHub li
 The version in the footer comes from `package.json` at build time (see `src/lib/buildInfo.ts`) — if the live site shows an older number, the deploy is stale, not the code.
 
 ## Changelog
+
+### 0.1.8
+
+- **Reorder tracks in your playlists.** Open a local playlist → **Reorder tracks**, then drag a track by its handle (mouse, pen or touch) or focus the handle and press ↑ / ↓ — Home / End send it to the front or back, Escape leaves reorder mode. The order is saved to the playlist immediately, and a public playlist's snapshot follows within a second or two.
+- Reordering never disturbs what is currently playing: the player keeps its own queue, so the next play from the playlist uses the new order.
+- Track rows for local playlists are now keyed by track id instead of position, so keyboard focus stays on the handle after a move; moves are announced through an `aria-live` region.
+- New `moveTrackInLocalPlaylist(id, from, to)` in `localLibrary.ts` (clamped, no-ops on invalid input, persists and syncs).
+- Version 0.1.8.
 
 ### 0.1.7
 

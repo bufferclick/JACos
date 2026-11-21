@@ -1,3 +1,4 @@
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { usePlayer, type PlaySource } from '../state/PlayerContext';
 import Waveform from './Waveform';
 import AddToPlaylistButton from './AddToPlaylistButton';
@@ -9,12 +10,21 @@ import Artwork from './Artwork';
  * SoundCloud-style tracklist row: index/equalizer, play button, title+uploader,
  * plays, like button, waveform, duration.
  */
+/** Drag-to-reorder wiring, supplied only on pages that allow reordering. */
+export interface RowReorderProps {
+  dragging: boolean;
+  dropTarget: boolean;
+  onPointerDown: (e: ReactPointerEvent<HTMLButtonElement>) => void;
+  onKeyDown: (e: ReactKeyboardEvent<HTMLButtonElement>) => void;
+}
+
 export default function TrackRow({
   track,
   index,
   queueTracks,
   source,
   onRemove,
+  reorder,
 }: {
   track: SCTrack;
   index: number;
@@ -22,6 +32,8 @@ export default function TrackRow({
   source: PlaySource;
   /** when set, shows an X that removes the track (e.g. from a local playlist) instead of add-to-playlist */
   onRemove?: () => void;
+  /** when set, the index cell becomes a drag handle (local playlists in reorder mode) */
+  reorder?: RowReorderProps;
 }) {
   const { current, status, toggle, playQueue, liked, toggleLike, source: playSource } = usePlayer();
 
@@ -44,9 +56,28 @@ export default function TrackRow({
   };
 
   return (
-    <div className={`track-row${active ? ' is-active' : ''}`} data-track-id={track.id}>
+    <div
+      className={`track-row${active ? ' is-active' : ''}${reorder?.dragging ? ' is-dragging' : ''}${reorder?.dropTarget ? ' is-drop-target' : ''}`}
+      data-track-id={track.id}
+      data-reorder-index={reorder ? index : undefined}
+    >
       <div className="track-index">
-        {active ? (
+        {reorder ? (
+          <button
+            type="button"
+            className="drag-handle"
+            aria-label={`Reorder ${track.title} — press the up or down arrow to move it`}
+            title="Drag to reorder — or press ↑ / ↓"
+            onPointerDown={reorder.onPointerDown}
+            onKeyDown={reorder.onKeyDown}
+          >
+            <svg viewBox="0 0 10 16" width="10" height="16" fill="currentColor" aria-hidden="true">
+              <circle cx="3" cy="3.4" r="1.25" /><circle cx="7" cy="3.4" r="1.25" />
+              <circle cx="3" cy="8" r="1.25" /><circle cx="7" cy="8" r="1.25" />
+              <circle cx="3" cy="12.6" r="1.25" /><circle cx="7" cy="12.6" r="1.25" />
+            </svg>
+          </button>
+        ) : active ? (
           <span className={`eq${playing ? '' : ' is-paused'}`} aria-hidden="true">
             <span /><span /><span /><span />
           </span>
