@@ -187,6 +187,30 @@ export function addTrackToLocalPlaylist(id: string, track: SCTrack): 'added' | '
   return ok ? 'added' : 'full';
 }
 
+/**
+ * Move a track inside a playlist. Indices are clamped to the list; returns
+ * false when nothing changed or the playlist is gone. Public snapshots follow.
+ */
+export function moveTrackInLocalPlaylist(id: string, from: number, to: number): boolean {
+  if (!Number.isInteger(from) || !Number.isInteger(to)) return false;
+  const list = getLocalPlaylists();
+  const target = list.find((p) => p.id === id);
+  if (!target) return false;
+  const { tracks } = target;
+  if (from < 0 || from >= tracks.length) return false;
+  const dest = Math.max(0, Math.min(tracks.length - 1, to));
+  if (dest === from) return false;
+
+  const next = [...tracks];
+  const [moved] = next.splice(from, 1);
+  next.splice(dest, 0, moved);
+  target.tracks = next;
+  target.updatedAt = Date.now();
+  const ok = savePlaylists(list);
+  if (ok) schedulePublicSync(target);
+  return ok;
+}
+
 export function removeTrackFromLocalPlaylist(id: string, trackId: number): boolean {
   const list = getLocalPlaylists();
   const target = list.find((p) => p.id === id);

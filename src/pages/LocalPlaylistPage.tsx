@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   getLocalPlaylist,
   renameLocalPlaylist,
   deleteLocalPlaylist,
   removeTrackFromLocalPlaylist,
+  moveTrackInLocalPlaylist,
   localPlaylistDuration,
   onLocalLibraryChange,
   hashPlaylistId,
@@ -28,6 +29,11 @@ export default function LocalPlaylistPage({ id }: { id: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [makingPrivate, setMakingPrivate] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState('');
+  const dragRef = useRef<{ from: number; over: number | null } | null>(null);
 
   useEffect(() => onLocalLibraryChange(() => setTick((t) => t + 1)), []);
 
@@ -64,6 +70,117 @@ export default function LocalPlaylistPage({ id }: { id: string }) {
     const start = Math.floor(Math.random() * playlist.tracks.length);
     playQueue(playlist.tracks, start, sourceInfo as { type: 'local'; id: number; title: string });
   }, [playlist, shuffle, toggleShuffle, playQueue, sourceInfo]);
+
+  /** Move a track and announce it (the library emits a change, so the page re-renders). */
+  const move = useCallback(
+    (from: number, to: number) => {
+      if (!playlist) return;
+      const length = playlist.tracks.length;
+      if (to < 0 || to >= length || from === to) return;
+      const moved = playlist.tracks[from];
+      if (!moveTrackInLocalPlaylist(playlist.id, from, to)) return;
+      setAnnouncement(`Moved ${moved?.title ?? 'the track'} to position ${to + 1} of ${length}.`);
+    },
+    [playlist],
+  );
+
+  const toggleReorder = useCallback(() => setReordering((on) => !on), []);
+
+  // leaving reorder mode drops any in-flight drag state and the global cursor
+  useEffect(() => {
+    if (reordering) return;
+    dragRef.current = null;
+    setDragFrom(null);
+    setDragOver(null);
+    document.body.classList.remove('is-reordering');
+  }, [reordering]);
+
+  // Escape leaves reorder mode (and aborts a drag in progress)
+  useEffect(() => {
+    if (!reordering) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      dragRef.current = null;
+      setDragFrom(null);
+      setDragOver(null);
+      document.body.classList.remove('is-reordering');
+      setReordering(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [reordering]);
+
+  // dragging: pointer events work for mouse, pen and touch
+  useEffect(() => {
+    if (dragFrom === null) return;
+    const onMove = (e: PointerEvent) => {
+      const el = typeof document.elementFromPoint === 'function' ? document.elementFromPoint(e.clientX, e.clientY) : null;
+      const row = el instanceof Element ? (el.closest('[data-reorder-index]') as HTMLElement | null) : null;
+      const parsed = row?.dataset.reorderIndex !== undefined ? Number(row.dataset.reorderIndex) : NaN;
+      const over = Number.isInteger(parsed) ? parsed : null;
+      if (dragRef.current) dragRef.current.over = over;
+      setDragOver((prev) => (prev === over ? prev : over));
+    };
+    const finish = () => {
+      const state = dragRef.current;
+      dragRef.current = null;
+      setDragFrom(null);
+      setDragOver(null);
+      document.body.classList.remove('is-reordering');
+      if (state && state.over !== null && state.over !== state.from) move(state.from, state.over);
+    };
+    const cancel = () => {
+      dragRef.current = null;
+      setDragFrom(null);
+      setDragOver(null);
+      document.body.classList.remove('is-reordering');
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', cancel);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', cancel);
+      document.body.classList.remove('is-reordering');
+    };
+  }, [dragFrom, move]);
+
+  const startDrag = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!reordering) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    // preventDefault would otherwise swallow focus, and the handle is the
+    // keyboard route for moving a track
+    try {
+      e.currentTarget.focus({ preventScroll: true });
+    } catch {
+      /* older browsers */
+    }
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture is best-effort */
+    }
+    dragRef.current = { from: index, over: null };
+    setDragFrom(index);
+    setDragOver(null);
+    document.body.classList.add('is-reordering');
+  };
+
+  const onHandleKeyDown = (index: number) => (e: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (!playlist) return;
+    const last = playlist.tracks.length - 1;
+    const target =
+      e.key === 'ArrowUp' ? index - 1 :
+      e.key === 'ArrowDown' ? index + 1 :
+      e.key === 'Home' ? 0 :
+      e.key === 'End' ? last :
+      null;
+    if (target === null) return;
+    e.preventDefault();
+    move(index, target);
+  };
 
   if (!playlist) return <NotFound />;
 
@@ -151,6 +268,9 @@ export default function LocalPlaylistPage({ id }: { id: string }) {
           <button className="btn btn-outline btn-block" onClick={shuffleAll} disabled={playlist.tracks.length === 0}>
             Shuffle play
           </button>
+          <button className="btn btn-outline btn-block" onClick={toggleReorder} disabled={playlist.tracks.length < 2}>
+            {reordering ? 'Done reordering' : 'Reorder tracks'}
+          </button>
           <ForkButton name={playlist.name} tracks={playlist.tracks} />
         </div>
         <div className="playlist-links">
@@ -181,7 +301,7 @@ export default function LocalPlaylistPage({ id }: { id: string }) {
       {/* tracklist */}
       <section className="playlist-main" aria-label="Tracklist">
         <div className="tracklist-head" aria-hidden="true">
-          <span>#</span>
+          <span>{reordering ? '⇅' : '#'}</span>
           <span />
           <span>Track</span>
           <span className="th-wave">Waveform</span>
@@ -189,9 +309,16 @@ export default function LocalPlaylistPage({ id }: { id: string }) {
           <span>Time</span>
           <span />
         </div>
+        {reordering && (
+          <p className="reorder-hint" role="note">
+            Drag a track by its handle, or focus the handle and press <kbd>↑</kbd> / <kbd>↓</kbd> (<kbd>Home</kbd> /{' '}
+            <kbd>End</kbd> jump to the ends).
+            {playlist.visibility === 'public' ? ' The public link follows the new order.' : ''}
+          </p>
+        )}
         {playlist.tracks.map((track, i) => (
           <TrackRow
-            key={`${track.id}-${i}`}
+            key={track.id}
             track={track}
             index={i}
             queueTracks={playlist.tracks}
@@ -200,8 +327,19 @@ export default function LocalPlaylistPage({ id }: { id: string }) {
               removeTrackFromLocalPlaylist(playlist.id, track.id);
               toast('Removed from the playlist.');
             }}
+            reorder={
+              reordering
+                ? {
+                    dragging: dragFrom === i,
+                    dropTarget: dragFrom !== null && dragOver === i && dragOver !== dragFrom,
+                    onPointerDown: startDrag(i),
+                    onKeyDown: onHandleKeyDown(i),
+                  }
+                : undefined
+            }
           />
         ))}
+        <p className="sr-only" aria-live="polite">{announcement}</p>
         {playlist.tracks.length === 0 && (
           <div className="empty-panel">
             <h2>Empty playlist</h2>
