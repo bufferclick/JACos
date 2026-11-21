@@ -204,20 +204,9 @@ body.has-player .footer { margin-bottom: 64px; }
 
 
 /* ------------------------------------------------------------
-   How it works
+   Code snippets (modal)
    ------------------------------------------------------------ */
-.how { border-top: 1px solid var(--border); padding: 42px 16px 8px; max-width: 1240px; margin: 0 auto; }
-.how-title { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 18px; }
-.how-steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 0; margin: 0; }
-.how-step { border: 1px solid var(--border-soft); border-radius: var(--radius-lg); padding: 20px 22px 22px; background: var(--bg); }
-.how-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: var(--radius-sm);
-  background: var(--orange-tint); color: var(--orange); font-size: 16px; font-weight: 800;
-}
-.how-step h3 { font-size: 15px; font-weight: 700; margin: 12px 0 6px; }
-.how-step p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
-.how-step code, .modal code {
+.modal code {
   font-family: var(--mono); font-size: 11.5px; background: var(--panel-grey);
   border: 1px solid var(--panel-grey); border-radius: 3px; padding: 1px 5px; white-space: nowrap;
 }
@@ -503,7 +492,7 @@ body.has-player .footer { margin-bottom: 64px; }
 /* ------------------------------------------------------------
    Settings modal
    ------------------------------------------------------------ */
-.modal-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(18, 18, 18, 0.55); display: flex; align-items: flex-start; justify-content: center; padding: 5vh 16px 16px; }
+.modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0, 0, 0, 0.66); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 5vh 16px 16px; }
 .modal { background: var(--bg); border-radius: var(--radius-lg); width: min(560px, 100%); max-height: 86vh; overflow: auto; box-shadow: var(--shadow-pop); }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--border-soft); position: sticky; top: 0; background: var(--bg); z-index: 1; }
 .modal-head h2 { margin: 0; font-size: 17px; font-weight: 800; }
@@ -568,7 +557,6 @@ body.has-player .footer { margin-bottom: 64px; }
   .hero { padding-top: 36px; }
   .playlist-layout { grid-template-columns: 1fr; gap: 26px; }
   .playlist-art { max-width: 340px; }
-  .how-steps { grid-template-columns: 1fr; }
   .oss-banner { flex-direction: column; align-items: flex-start; margin-left: 16px; margin-right: 16px; }
   .footer-inner { grid-template-columns: 1fr; gap: 26px; }
 }

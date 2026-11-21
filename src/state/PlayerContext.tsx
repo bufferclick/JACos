@@ -78,6 +78,8 @@ interface LoadOptions {
   skip?: Set<string>;
   /** fallback depth — 0 for a normal user-initiated play */
   attempt?: number;
+  /** the stored copy of this track already failed — re-fetch it from the API */
+  forceFresh?: boolean;
 }
 
 /** Resolve as soon as the media element can actually play, reject on error/timeout. */
@@ -340,6 +342,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       const tried: string[] = [];
 
+      /**
+       * Tracks that came out of likes, playlists or history were stored with
+       * the signed URLs of the day they were saved, and those expire. Before
+       * telling the user a song is dead, ask SoundCloud for a fresh copy of it
+       * and walk the chain once more.
+       */
+      const retryWithFreshTrack = (): boolean => {
+        if (opts.forceFresh) return false;
+        const nextSkip = new Set([...skip, 'cache']);
+        void loadRef.current(track, { skip: nextSkip, attempt, forceFresh: true });
+        return true;
+      };
+
       try {
         /* ---- 1. the cache: instant, offline, known to have worked before ---- */
         if (!skip.has('cache')) {
@@ -374,11 +389,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         /* ---- 2. the network chain, best-known source first ---- */
         // Search rows arrive without stream formats, so ask SoundCloud for the
         // full track (by id, then by permalink) before deciding it is dead.
-        const full = await hydrateTrack(track).catch(() => track);
+        const full = await hydrateTrack(track, { force: opts.forceFresh === true }).catch(() => track);
         if (superseded()) return;
         const chain = await buildAudioChain(full);
         if (superseded()) return;
         if (chain.length === 0) {
+          if (retryWithFreshTrack()) return;
           reportFailure(track, noSourceReason(full));
           return;
         }
@@ -454,6 +470,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
 
         if (superseded()) return;
+        if (retryWithFreshTrack()) return;
         reportFailure(
           track,
           `No working source for “${track.title}” — tried ${tried.length} of ${chain.length} (${tried.join(', ')}).`,
