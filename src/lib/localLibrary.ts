@@ -45,6 +45,19 @@ export function onLocalLibraryChange(fn: () => void): () => void {
   return () => window.removeEventListener('jacos:local-lib', fn);
 }
 
+/**
+ * Tracks saved to localStorage are stored without `media` / `track_authorization`:
+ * those are signed CDN URLs that expire within hours, and a stored copy that
+ * looks streamable but answers 403 is exactly how "a song that used to work"
+ * stops working. The player re-fetches them by id when it needs to play.
+ */
+function slimForStorage(track: SCTrack): SCTrack {
+  const copy: Record<string, unknown> = { ...track };
+  delete copy.media;
+  delete copy.track_authorization;
+  return copy as unknown as SCTrack;
+}
+
 function isQuotaError(err: unknown): boolean {
   return err instanceof DOMException && (err.name === 'QuotaExceededError' || err.code === 22);
 }
@@ -240,7 +253,7 @@ export function recordPlayedTrack(track: SCTrack): void {
   if (!track || typeof track.id !== 'number') return;
   const rest = getRecentlyPlayed().filter((t) => t.id !== track.id);
   try {
-    writeJSONStrict(RECENT_KEY, [track, ...rest].slice(0, MAX_RECENT));
+    writeJSONStrict(RECENT_KEY, [slimForStorage(track), ...rest].slice(0, MAX_RECENT));
   } catch {
     /* quota — history is best-effort */
   }
@@ -262,7 +275,7 @@ export function isTrackLiked(trackId: number): boolean {
 export function toggleLikedTrack(track: SCTrack): boolean {
   const list = getLikedTracks();
   const exists = list.some((t) => t.id === track.id);
-  const next = exists ? list.filter((t) => t.id !== track.id) : [track, ...list].slice(0, MAX_LIKES);
+  const next = exists ? list.filter((t) => t.id !== track.id) : [slimForStorage(track), ...list].slice(0, MAX_LIKES);
   try {
     writeJSONStrict(LIKES_KEY, next);
   } catch {

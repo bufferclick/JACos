@@ -127,28 +127,6 @@ export default function Home() {
 
       </section>
 
-      {/* -------------------------------------------------- how it works */}
-      <section className="how" aria-label="How it works">
-        <h2 className="how-title">How it works</h2>
-        <ol className="how-steps">
-          <li className="how-step">
-            <span className="how-num">1</span>
-            <h3>Paste a URL</h3>
-            <p>A profile like <code>soundcloud.com/bfrend</code>, a <code>/sets/…</code> playlist link, or even a bare <code>@handle</code>.</p>
-          </li>
-          <li className="how-step">
-            <span className="how-num">2</span>
-            <h3>Browse their playlists</h3>
-            <p>JACos fetches the user&rsquo;s public playlists and tracks straight from SoundCloud&rsquo;s own endpoints.</p>
-          </li>
-          <li className="how-step">
-            <span className="how-num">3</span>
-            <h3>Press play</h3>
-            <p>Tracks stream from SoundCloud&rsquo;s CDN and are cached once in your browser&rsquo;s Cache Storage — replays come straight from cache.</p>
-          </li>
-        </ol>
-      </section>
-
       {/* -------------------------------------------------- open source banner */}
       <section className="oss-banner" aria-label="Open source">
         <div className="oss-text">

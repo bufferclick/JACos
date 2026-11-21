@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import {
   detectClientId,
@@ -167,7 +168,7 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
     source === 'server' ? 'Built-in bridge (no setup needed)' : source === 'custom' ? 'Custom (yours)' : source === 'scrape' ? 'Auto-detected from soundcloud.com' : source === 'cache' ? 'Auto-detected (cached)' : 'Not needed — handled by the bridge';
 
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-modal="true" aria-label="Settings">
         <div className="modal-head">
@@ -350,6 +351,7 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
           </section>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

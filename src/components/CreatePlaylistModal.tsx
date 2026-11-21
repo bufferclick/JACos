@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import {
   createLocalPlaylist,
@@ -126,7 +127,7 @@ export default function CreatePlaylistModal({
 
   const preview = `https://jac-os.pages.dev/${slug || 'your-slug'}`;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
       <div className="modal modal-sm nlp" role="dialog" aria-modal="true" aria-label={isPublish ? 'Make playlist public' : 'New playlist'}>
         {/* header: orange mark + title */}
@@ -253,6 +254,7 @@ export default function CreatePlaylistModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

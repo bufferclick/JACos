@@ -442,14 +442,42 @@ export function hasStreamFormats(track: SCTrack | null | undefined): boolean {
 }
 
 /**
+ * Is the `track_authorization` JWT (which signs every CDN URL) still valid?
+ * Tracks remembered in likes, playlists or history carry the JWT they were
+ * fetched with, and those expire — which is exactly why a song that played
+ * fine last week answers 403 today. Unknown/absent tokens count as valid:
+ * plenty of tracks stream without one.
+ */
+function authorizationExpired(auth: string | undefined | null): boolean {
+  if (!auth || typeof auth !== 'string') return false;
+  const payload = auth.split('.')[1];
+  if (!payload) return false;
+  try {
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    const claims = JSON.parse(atob(padded)) as { exp?: number };
+    const exp = Number(claims?.exp);
+    if (!Number.isFinite(exp) || exp <= 0) return false;
+    return exp * 1000 <= Date.now() + 60_000;
+  } catch {
+    return false;
+  }
+}
+
+/** Formats we can actually use right now (present *and* not expired). */
+export function hasUsableStreamFormats(track: SCTrack | null | undefined): boolean {
+  return hasStreamFormats(track) && !authorizationExpired(track?.track_authorization);
+}
+
+/**
  * `/tracks/{id}` — the complete track object. Search rows and some playlist
  * stubs omit `media.transcodings` (and `track_authorization`), which is what
  * used to make perfectly playable tracks report "no playable stream".
  */
-export async function getTrackById(id: number): Promise<SCTrack> {
+export async function getTrackById(id: number, opts: { fresh?: boolean } = {}): Promise<SCTrack> {
   if (!Number.isFinite(id)) throw new ApiError(0, 'Invalid track id.');
   const hit = fullTrackCache.get(id);
-  if (hit && hit.expires > Date.now()) return hit.track;
+  if (!opts.fresh && hit && hit.expires > Date.now()) return hit.track;
 
   const raw = await apiFetch<any>(`/tracks/${id}`);
   if (!raw || typeof raw.id !== 'number') throw new ApiError(0, 'SoundCloud returned no track data.');
@@ -479,12 +507,16 @@ function mergeTrack(shallow: SCTrack, full: SCTrack): SCTrack {
  * full track by id first, then `/resolve` on its permalink as a second opinion.
  * Returns the original object unchanged when there is genuinely nothing to play.
  */
-export async function hydrateTrack(track: SCTrack): Promise<SCTrack> {
+export async function hydrateTrack(track: SCTrack, opts: { force?: boolean } = {}): Promise<SCTrack> {
   if (!track || typeof track.id !== 'number') return track;
-  if (hasStreamFormats(track) || track.streamable === false || track.policy === 'BLOCK') return track;
+  const force = opts.force === true;
+  // The short-circuit used to trust stored transcodings blindly. They are signed
+  // URLs that expire, so "has formats" is not the same as "can be played": an
+  // expired token now counts as missing data and the track is re-fetched.
+  if (!force && (hasUsableStreamFormats(track) || track.streamable === false || track.policy === 'BLOCK')) return track;
 
   try {
-    const full = await getTrackById(track.id);
+    const full = await getTrackById(track.id, { fresh: force });
     if (hasStreamFormats(full) || full.streamable === false || full.policy === 'BLOCK') {
       return mergeTrack(track, full);
     }

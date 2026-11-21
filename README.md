@@ -2,7 +2,7 @@
 
 **Just Another Copy of Sweden's Soundcloud** — paste a public SoundCloud profile or playlist URL and stream what they publish, straight from SoundCloud's own CDN.
 
-[![version](https://img.shields.io/badge/version-0.2.0-ff5500.svg)](package.json)
+[![version](https://img.shields.io/badge/version-0.2.1-ff5500.svg)](package.json)
 [![license](https://img.shields.io/badge/license-MIT-ff5500.svg)](LICENSE)
 
 Open source (MIT), made by **Buffer**. Not affiliated with SoundCloud AB — all audio belongs to its uploaders.
@@ -88,6 +88,15 @@ Settings, **About**: version and build timestamp of the running build, GitHub li
 The version in the footer comes from `package.json` at build time (see `src/lib/buildInfo.ts`) — if the live site shows an older number, the deploy is stale, not the code.
 
 ## Changelog
+
+### 0.2.1
+
+- **Fixed: a song that played before can stop working.** Every SoundCloud stream URL is *signed*, and the signature (`track_authorization`, a JWT) expires within hours. Tracks saved in your likes, playlists or history kept the signature they were saved with, and the player's "this track already has stream formats, no need to ask again" shortcut trusted it forever — so a saved song kept answering 403 long after it stopped being playable. An expired token now counts as *missing* data, so the track is re-fetched with fresh URLs before playback.
+- If the whole chain still fails, the player re-fetches the track once (bypassing the 5-minute track memo) and walks every source again before showing an error.
+- **Likes and Recently played no longer store signed URLs at all** — only the fields the UI needs — so saved tracks always go through a fresh lookup. Smaller in `localStorage` too.
+- Removed the numbered **"How it works"** three-step block from the home page.
+- **Modals render through a portal** with an opaque, blurred backdrop, so page content can no longer paint over or through an open dialog (the New playlist sheet was showing the page's search field across its name field).
+- Version 0.2.1.
 
 ### 0.2.0
 
