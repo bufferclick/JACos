@@ -2,7 +2,7 @@
 
 **Just Another Copy of Sweden's Soundcloud** — paste a public SoundCloud profile or playlist URL and stream what they publish, straight from SoundCloud's own CDN.
 
-[![version](https://img.shields.io/badge/version-0.1.8-ff5500.svg)](package.json)
+[![version](https://img.shields.io/badge/version-0.2.0-ff5500.svg)](package.json)
 [![license](https://img.shields.io/badge/license-MIT-ff5500.svg)](LICENSE)
 
 Open source (MIT), made by **Buffer**. Not affiliated with SoundCloud AB — all audio belongs to its uploaders.
@@ -13,7 +13,7 @@ Open source (MIT), made by **Buffer**. Not affiliated with SoundCloud AB — all
 - **Search like SoundCloud** — the top search box finds **tracks**, **playlists** and **people** across all of SoundCloud, with SoundCloud-style result sections and pagination.
 - **Likes & playlists — private or public** — like any track and it lands in **Likes**; create unlimited **local playlists** with the ＋ button on any row or in the player. **Reorder any playlist** with the handle (drag it, or press ↑ / ↓) — the order sticks and a public link follows it. Private playlists stay in this browser only — nothing is uploaded or synced. Make any playlist **public** and it gets a shareable link (`jac-os.pages.dev/<your-slug>`) that anyone can open — no account needed; the link follows your edits and can be made private again any time.
 - **Fork any playlist** — one tap copies any SoundCloud, public or local playlist into your own private copy, ready to trim, extend and rename.
-- **Full player** — play, shuffle, repeat, seek (drag the bar — audio only jumps when you release), like, volume (defaults to 50%), keyboard shortcuts (Space / arrows / L), and lock-screen controls via the Media Session API. A right-hand library column (likes + playlists) fills the empty space on wide screens.
+- **Full player** — play, shuffle, repeat, seek (drag the bar — audio only jumps when you release), like, volume (defaults to 50%), keyboard shortcuts (Space / arrows / L), and lock-screen controls via the Media Session API. Navigation mirrors SoundCloud: a left rail (Home / Search / Library, your playlists) on desktop and a **Home · Search · Library** tab bar on phones, with a Library page holding likes, playlists and recently played.
 - **Dark & light themes** — perfect dark mode, a light theme faithful to SoundCloud, or follow your system. Toggle in the top bar or Settings → Appearance.
 - **SoundCloud's actual catalog and rules** — unavailable or uploader-blocked tracks are simply not playable; everything public that SoundCloud allows streams here.
 - **Zero-config connection** — on Cloudflare Pages a tiny built-in **Pages Function** (`functions/api/sc`) talks to SoundCloud server-side and handles the web player's `client_id` handshake automatically. Nothing to paste, nothing to sign up for.
@@ -88,6 +88,20 @@ Settings, **About**: version and build timestamp of the running build, GitHub li
 The version in the footer comes from `package.json` at build time (see `src/lib/buildInfo.ts`) — if the live site shows an older number, the deploy is stale, not the code.
 
 ## Changelog
+
+### 0.2.0
+
+**A SoundCloud-shaped shell — the mobile app's navigation, on every screen size.**
+
+- **You can reach your library on a phone now.** That was the real bug: below 1160px the only Likes/Playlists surface was the right-hand column, which `styles.css` hid — and below 640px the header links were hidden too, so the pages existed but nothing linked to them. There is now a bottom tab bar (**Home · Search · Library**) on phones and tablets, the player bar floats above it as a mini-player pill, and **Library** is a first-class page.
+- **Library page** (`#/library`) mirrors the app's Library tab: Your likes / Playlists rows with counts and chevrons, then **Recently played** (a new 24-track history, recorded when a track actually starts) and your playlists with artwork, "Playlist · n tracks" and a public marker.
+- **Desktop gets soundcloud.com's left rail** instead of the old right-hand column: Home / Search / Library, library shortcuts with live counts, your playlists with artwork, a **New playlist** action and the "stays in this browser" note. Content sits in a single centred column beside it.
+- **Track rows are phone-native.** Under 760px each row is artwork · title/artist/"▶ plays · duration" · like · add — the index, waveform and duration columns are gone, and tapping the artwork plays. Reordering still works on touch: the handle column comes back only while reorder mode is on.
+- **Likes and Playlists pages rebuilt as app list screens**: big title, track count and total duration, a round shuffle button and a big round orange play button, plus a filter field on Playlists. Playlists are rows now, not a card grid.
+- **Search tab** opens a real search screen (`#/search` with no query): its own field, then results as usual.
+- Mini-player on phones: artwork, title/artist, round play/pause and like, above the tabs; shuffle/prev/next/repeat/volume stay on desktop where there is room.
+- `src/components/Sidebar.tsx` is gone (superseded by `NavRail`, `TabBar` and `LibraryPage`); new `src/components/NavIcons.tsx`, `src/lib/localLibrary.ts` gained `getRecentlyPlayed()` / `recordPlayedTrack()`.
+- Version 0.2.0.
 
 ### 0.1.8
 

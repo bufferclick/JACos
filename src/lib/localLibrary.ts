@@ -11,10 +11,12 @@ import { updatePublicPlaylist, deletePublicPlaylist } from './publicPlaylists';
 
 const PLAYLISTS_KEY = 'local_playlists';
 const LIKES_KEY = 'liked_tracks';
+const RECENT_KEY = 'recent_tracks';
 const LEGACY_LIKES_KEY = 'liked';
 const MAX_PLAYLISTS = 100;
 const MAX_TRACKS_PER_PLAYLIST = 500;
 const MAX_LIKES = 500;
+const MAX_RECENT = 24;
 
 export interface LocalPlaylist {
   id: string;
@@ -224,6 +226,25 @@ export function removeTrackFromLocalPlaylist(id: string, trackId: number): boole
 
 export function localPlaylistDuration(p: LocalPlaylist): number {
   return p.tracks.reduce((sum, t) => sum + (typeof t.duration === 'number' ? t.duration : 0), 0);
+}
+
+/* ---------------------------- Recently played ---------------------------- */
+
+export function getRecentlyPlayed(): SCTrack[] {
+  const list = readJSON<SCTrack[]>(RECENT_KEY, []);
+  return Array.isArray(list) ? list.filter((t) => t && typeof t.id === 'number') : [];
+}
+
+/** Remember a track as played (newest first, unique, capped). */
+export function recordPlayedTrack(track: SCTrack): void {
+  if (!track || typeof track.id !== 'number') return;
+  const rest = getRecentlyPlayed().filter((t) => t.id !== track.id);
+  try {
+    writeJSONStrict(RECENT_KEY, [track, ...rest].slice(0, MAX_RECENT));
+  } catch {
+    /* quota — history is best-effort */
+  }
+  emitChange();
 }
 
 /* --------------------------------- Likes --------------------------------- */

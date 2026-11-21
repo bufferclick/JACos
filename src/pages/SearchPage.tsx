@@ -42,6 +42,7 @@ export default function SearchPage({ q }: { q: string }) {
 
   const load = useCallback(
     async (which: Tab, offset: number) => {
+      if (!q.trim()) return;
       setLoading(true);
       setError(null);
       try {
@@ -88,6 +89,8 @@ export default function SearchPage({ q }: { q: string }) {
     if (missing) void load(tab, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+
+  if (!q.trim()) return <SearchLanding />;
 
   const current = tab === 'tracks' ? tracks : tab === 'playlists' ? playlists : people;
   const offset = current?.length ?? 0;
@@ -177,6 +180,44 @@ export default function SearchPage({ q }: { q: string }) {
           {loading ? 'Loading…' : 'Show more'}
         </button>
       )}
+    </div>
+  );
+}
+
+/** Search without a query — what the phone's Search tab opens. */
+function SearchLanding() {
+  const [value, setValue] = useState('');
+  return (
+    <div className="page container search-page">
+      <div className="search-landing">
+        <h1>Search SoundCloud</h1>
+        <p className="search-landing-sub">Tracks, playlists and people — or paste a profile or playlist link.</p>
+        <form
+          className="search search-landing-field"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const v = value.trim();
+            if (v) navigate(`/search/${encodeURIComponent(v)}`);
+          }}
+        >
+          <svg className="search-icon" width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="5.2" stroke="currentColor" strokeWidth="1.6" />
+            <path d="m11.2 11.2 3.4 3.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Search tracks, playlists, people…"
+            aria-label="Search SoundCloud"
+            spellCheck={false}
+            autoComplete="off"
+            enterKeyHint="search"
+            autoFocus
+          />
+        </form>
+      </div>
     </div>
   );
 }
