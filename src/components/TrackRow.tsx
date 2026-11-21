@@ -47,6 +47,9 @@ export default function TrackRow({
   const uploader = track.user?.username;
   const uploaderHref = track.user ? `#/user/${encodeURIComponent(track.user.permalink)}` : undefined;
 
+  const mobileArt = artwork(track.artwork_url, 't120x120');
+  const plays = track.playback_count;
+
   const onPlay = () => {
     if (active) {
       toggle();
@@ -61,6 +64,21 @@ export default function TrackRow({
       data-track-id={track.id}
       data-reorder-index={reorder ? index : undefined}
     >
+      {/* phones: SoundCloud's row leads with artwork, not a number */}
+      <button
+        type="button"
+        className="track-art-mobile"
+        onClick={onPlay}
+        aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
+        tabIndex={-1}
+      >
+        {mobileArt ? (
+          <img src={mobileArt} alt="" width={48} height={48} loading="lazy" />
+        ) : (
+          <span className="track-art-mobile-fallback" aria-hidden="true">{track.title.slice(0, 1).toUpperCase()}</span>
+        )}
+      </button>
+
       <div className="track-index">
         {reorder ? (
           <button
@@ -112,6 +130,11 @@ export default function TrackRow({
               {fmtCount(track.playback_count)}
             </span>
           )}
+        </div>
+        <div className="track-meta-mobile">
+          {typeof plays === 'number' && plays > 0 && <span>▶ {fmtCount(plays)}</span>}
+          <span className="track-meta-dot" aria-hidden="true">·</span>
+          <span>{fmtDuration(track.duration)}</span>
         </div>
       </div>
 

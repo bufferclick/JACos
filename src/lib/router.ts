@@ -6,6 +6,7 @@ export type Route =
   | { name: 'playlist'; id: number }
   | { name: 'resolve'; scPath: string }
   | { name: 'search'; q: string }
+  | { name: 'library' }
   | { name: 'likes' }
   | { name: 'playlists' }
   | { name: 'localplaylist'; id: string }
@@ -19,7 +20,9 @@ export function parseHash(hash: string): Route {
   if (segs[0] === 'user' && segs[1]) return { name: 'user', permalink: decodeURIComponent(segs[1]) };
   if (segs[0] === 'playlist' && segs[1] && /^\d+$/.test(segs[1])) return { name: 'playlist', id: Number(segs[1]) };
   if (segs[0] === 'resolve' && segs.length > 1) return { name: 'resolve', scPath: segs.slice(1).map(decodeURIComponent).join('/') };
-  if (segs[0] === 'search' && segs.length > 1) return { name: 'search', q: segs.slice(1).map(decodeURIComponent).join('/') };
+  if (segs[0] === 'search' && segs.length === 1) return { name: 'search', q: '' };
+  if (segs[0] === 'search') return { name: 'search', q: segs.slice(1).map(decodeURIComponent).join('/') };
+  if (segs[0] === 'library') return { name: 'library' };
   if (segs[0] === 'likes') return { name: 'likes' };
   if (segs[0] === 'playlists' && segs.length === 1) return { name: 'playlists' };
   if (segs[0] === 'playlists' && segs[1]) return { name: 'localplaylist', id: decodeURIComponent(segs[1]) };

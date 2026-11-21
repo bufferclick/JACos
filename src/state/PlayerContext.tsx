@@ -12,7 +12,7 @@ import type Hls from 'hls.js';
 import { hydrateTrack, type SCTrack } from '../lib/soundcloud';
 import { toast } from '../lib/toast';
 import { readString, writeString } from '../lib/storage';
-import { getLikedTracks, toggleLikedTrack } from '../lib/localLibrary';
+import { getLikedTracks, recordPlayedTrack, toggleLikedTrack } from '../lib/localLibrary';
 import { getCachedAudio, putCachedAudio, removeCachedAudio } from '../lib/audioCache';
 import { buildAudioChain, cacheTrackAudio, rememberSourceResult, type AudioSource } from '../lib/mediaSources';
 
@@ -331,6 +331,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const play = async () => {
         try {
           await audio.play();
+          // playback actually started — remember it for the Library page
+          recordPlayedTrack(track);
         } catch {
           if (!superseded()) setStatus('paused');
         }

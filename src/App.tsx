@@ -17,7 +17,9 @@ import LikesPage from './pages/LikesPage';
 import PlaylistsPage from './pages/PlaylistsPage';
 import LocalPlaylistPage from './pages/LocalPlaylistPage';
 import PublicPlaylistPage from './pages/PublicPlaylistPage';
-import Sidebar from './components/Sidebar';
+import LibraryPage from './pages/LibraryPage';
+import NavRail from './components/NavRail';
+import TabBar from './components/TabBar';
 import { migrateLegacyLikes } from './lib/localLibrary';
 
 function Routed() {
@@ -33,6 +35,8 @@ function Routed() {
       return <ResolvePage key={route.scPath} scPath={route.scPath} />;
     case 'search':
       return <SearchPage key={route.q} q={route.q} />;
+    case 'library':
+      return <LibraryPage />;
     case 'likes':
       return <LikesPage />;
     case 'playlists':
@@ -83,15 +87,14 @@ export default function App() {
   return (
     <PlayerProvider>
       <TopNav />
-      <main className="main">
-        <div className="page-shell">
-          <div className="page-content">
-            <Routed />
-          </div>
-          <Sidebar />
-        </div>
-      </main>
+      <div className="app-shell">
+        <NavRail />
+        <main className="app-main">
+          <Routed />
+        </main>
+      </div>
       <Footer />
+      <TabBar />
       <PlayerBar />
       <Toasts />
     </PlayerProvider>
